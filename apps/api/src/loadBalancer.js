@@ -26,10 +26,13 @@ export function startPrimary(port) {
   for (let i = 0; i < total; i++) cluster.fork();
 
   cluster.on('exit', (worker, code) => {
-    if (code !== 0 && !worker.exitedAfterDisconnect) {
-      console.warn(`[balanceador] worker ${worker.process.pid} cayó (code ${code}), reiniciando…`);
-      cluster.fork();
+    if (code === 0 || worker.exitedAfterDisconnect) return;
+    if (code === 78) {
+      console.error(`[balanceador] worker ${worker.process.pid} no pudo bindear el puerto ${port} (¿otra instancia de la API corriendo?). Detén el proceso que lo ocupa y reinicia.`);
+      return;
     }
+    console.warn(`[balanceador] worker ${worker.process.pid} cayó (code ${code}), reiniciando…`);
+    cluster.fork();
   });
 
   cluster.on('listening', (worker, address) => {

@@ -12,8 +12,13 @@ const app = esPrimario ? null : createApp();
 if (esPrimario) {
   startPrimary(env.port);
 } else if (!esServerless) {
-  app.listen(env.port, () => {
+  const server = app.listen(env.port, () => {
     console.log(`API escuchando en http://localhost:${env.port} (pid ${process.pid})`);
+  });
+  server.on('error', (err) => {
+    console.error(`[api] no se pudo escuchar en el puerto ${env.port}: ${err.message}`);
+    // 78 = fallo fatal de bind (p. ej. EADDRINUSE): el balanceador no lo reinicia.
+    process.exit(78);
   });
 }
 
